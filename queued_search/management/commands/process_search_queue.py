@@ -30,7 +30,7 @@ class Command(NoArgsCommand):
             default=None, type='int',
             help='Number of items to index at once.'
         ),
-        make_option("-u", "--using", action="store", type="string", dest="using", default=DEFAULT_ALIAS,
+        make_option("-u", "--using", action="store", type="string", dest="using", default=None,
             help='If provided, chooses a connection to work with.'
         ),
     )
