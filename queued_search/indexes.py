@@ -20,16 +20,16 @@ class QueuedSearchIndex(indexes.SearchIndex):
     # We override the built-in _setup_* methods to connect the enqueuing
     # operation.
     def _setup_save(self):
-        signals.post_save.connect(self.enqueue_save, sender=self.get_model())
+        signals.post_save.connect(self.enqueue_save, sender=self.get_model(), dispatch_uid=str(self.get_model()))
     
     def _setup_delete(self):
-        signals.post_delete.connect(self.enqueue_delete, sender=self.get_model())
+        signals.post_delete.connect(self.enqueue_delete, sender=self.get_model(), dispatch_uid=str(self.get_model()))
     
     def _teardown_save(self):
-        signals.post_save.disconnect(self.enqueue_save, sender=self.get_model())
+        signals.post_save.disconnect(self.enqueue_save, sender=self.get_model(), dispatch_uid=str(self.get_model()))
     
     def _teardown_delete(self):
-        signals.post_delete.disconnect(self.enqueue_delete, sender=self.get_model())
+        signals.post_delete.disconnect(self.enqueue_delete, sender=self.get_model(), dispatch_uid=str(self.get_model()))
     
     def enqueue_save(self, instance, **kwargs):
         return self.enqueue('update', instance)
