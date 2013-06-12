@@ -176,7 +176,7 @@ class Command(NoArgsCommand):
         try:
             instance = model_class.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            self.log.error("Couldn't load model instance with pk #%s. Somehow it went missing?" % pk)
+            logging.getLogger("custommade_log_file").error("Couldn't load model instance with pk #%s. Somehow it went missing?" % pk)
             return None
         except MultipleObjectsReturned:
             self.log.error("More than one object with pk #%s. Oops?" % pk)
