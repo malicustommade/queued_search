@@ -54,9 +54,9 @@ class Command(NoArgsCommand):
         
         # Check if enough is there to process.
         if not len(self.queue):
-            self.log.info("Not enough items in the queue to process.")
+            self.log.info("Queued Search: Not enough items in the queue to process.")
         
-        self.log.info("Starting to process the queue.")
+        self.log.info("Queued Search: Starting to process the queue.")
         
         # Consume the whole queue first so that we can group update/deletes
         # for efficiency.
@@ -72,23 +72,23 @@ class Command(NoArgsCommand):
             # We've run out of items in the queue.
             pass
         
-        self.log.info("Queue consumed.")
+        self.log.info("Queued Search: Queue consumed.")
         
         try:
             self.handle_updates()
             self.handle_deletes()
         except Exception, e:
-            self.log.error('Exception seen during processing: %s' % e)
+            self.log.error('Queued Search: Exception seen during processing: %s' % e)
             self.requeue()
             raise e
         
-        self.log.info("Processing complete.")
+        self.log.info("Queued Search: Processing complete.")
     
     def requeue(self):
         """
         On failure, requeue all unprocessed messages.
         """
-        self.log.error('Requeuing unprocessed messages.')
+        self.log.error('Queued Search: Requeuing unprocessed messages.')
         update_count = 0
         delete_count = 0
         
@@ -102,7 +102,7 @@ class Command(NoArgsCommand):
                 self.queue.write('delete:%s' % delete)
                 delete_count += 1
         
-        self.log.error('Requeued %d updates and %d deletes.' % (update_count, delete_count))
+        self.log.error('Queued Search: Requeued %d updates and %d deletes.' % (update_count, delete_count))
     
     def process_message(self, message):
         """
@@ -112,7 +112,7 @@ class Command(NoArgsCommand):
         self.log.debug("Processing message '%s'..." % message)
         
         if not ':' in message:
-            self.log.error("Unable to parse message '%s'. Moving on..." % message)
+            self.log.error("Queued Search: Unable to parse message '%s'. Moving on..." % message)
             return
         
         action, obj_identifier = message.split(':')
@@ -139,7 +139,7 @@ class Command(NoArgsCommand):
             self.actions['delete'].add(obj_identifier)
             self.log.debug("Added '%s' to the delete list." % obj_identifier)
         else:
-            self.log.error("Unrecognized action '%s'. Moving on..." % action)
+            self.log.error("Queued Seach: Unrecognized action '%s'. Moving on..." % action)
     
     def split_obj_identifier(self, obj_identifier):
         """
@@ -150,7 +150,7 @@ class Command(NoArgsCommand):
         bits = obj_identifier.split('.')
         
         if len(bits) < 2:
-            self.log.error("Unable to parse object identifer '%s'. Moving on..." % obj_identifier)
+            self.log.error("Queued Search: Unable to parse object identifer '%s'. Moving on..." % obj_identifier)
             return (None, None)
         
         pk = bits[-1]
@@ -166,7 +166,7 @@ class Command(NoArgsCommand):
         model_class = get_model(app_name, classname)
         
         if model_class is None:
-            self.log.error("Could not load model from '%s'. Moving on..." % object_path)
+            self.log.error("Queued Search: Could not load model from '%s'. Moving on..." % object_path)
             return None
         
         return model_class
@@ -176,10 +176,10 @@ class Command(NoArgsCommand):
         try:
             instance = model_class.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            logging.getLogger("custommade_log_file").error("Couldn't load model instance with pk #%s. Somehow it went missing?" % pk)
+            logging.getLogger("custommade_log_file").error("Queued Search could not load model instance with primary key #%s. It is missing." % pk)
             return None
         except MultipleObjectsReturned:
-            self.log.error("More than one object with pk #%s. Oops?" % pk)
+            self.log.error("Queued Search: More than one object found with primary key #%s. This is not expected" % pk)
             return None
         
         return instance
@@ -189,7 +189,7 @@ class Command(NoArgsCommand):
         try:
             return connections['default'].get_unified_index().get_index(model_class)
         except NotHandled:
-            self.log.error("Couldn't find a SearchIndex for %s." % model_class)
+            self.log.error("Queued Search: Could not find a SearchIndex for %s." % model_class)
             return None
     
     def handle_updates(self):
@@ -208,7 +208,7 @@ class Command(NoArgsCommand):
             (object_path, pk) = self.split_obj_identifier(obj_identifier)
             
             if object_path is None or pk is None:
-                self.log.error("Skipping.")
+                self.log.error("Queued Search: Skipping. object_path is None or primary key is None")
                 continue
             
             if object_path not in updates:
@@ -225,7 +225,7 @@ class Command(NoArgsCommand):
                 current_index = self.get_index(model_class)
             
             if not current_index:
-                self.log.error("Skipping.")
+                self.log.error("Queued Search: Skipping. object_path is not current_index")
                 continue
             
             instances = [self.get_instance(model_class, pk) for pk in pks]
@@ -243,7 +243,7 @@ class Command(NoArgsCommand):
                 end = min(start + self.batchsize, total)
                 batch_instances = instances[start:end]
                 
-                self.log.debug("  indexing %s - %d of %d." % (start+1, end, total))
+                self.log.debug("Indexing %s - %d of %d." % (start+1, end, total))
                 current_index._get_backend(self.using).update(current_index, batch_instances)
                 
                 for updated in batch_instances:
@@ -265,7 +265,7 @@ class Command(NoArgsCommand):
             (object_path, pk) = self.split_obj_identifier(obj_identifier)
             
             if object_path is None or pk is None:
-                self.log.error("Skipping.")
+                self.log.error("Queued Search: Skipping delete. object_path is None or primary key is None.")
                 continue
             
             if object_path not in deletes:
@@ -282,7 +282,7 @@ class Command(NoArgsCommand):
                 current_index = self.get_index(model_class)
             
             if not current_index:
-                self.log.error("Skipping.")
+                self.log.error("Queued Search: Skipping. object_path is not current_index")
                 continue
             
             pks = []
