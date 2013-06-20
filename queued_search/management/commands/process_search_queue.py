@@ -176,7 +176,7 @@ class Command(NoArgsCommand):
         try:
             instance = model_class.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            logging.getLogger("custommade_log_file").error("Queued Search could not load model instance with primary key #%s. It is missing." % pk)
+            logging.getLogger("custommade_logging").error("Queued Search could not load model instance with primary key #%s. It is missing." % pk)
             return None
         except MultipleObjectsReturned:
             self.log.error("Queued Search: More than one object found with primary key #%s. This is not expected" % pk)
